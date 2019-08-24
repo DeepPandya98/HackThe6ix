@@ -7,8 +7,8 @@ const app = express();
 
 app.use(bodyParser.urlencoded({extended:false}));
 
-const accountSid = 'ACdb49f8fe1df9e277ae501524340acb24';
-const authToken = '395391fa5003d69dbbf8757ab5e11618';
+// const accountSid = 'XXXXXXX';
+// const authToken = 'XXXXXXXXX';
 
 const client = require('twilio')(accountSid, authToken);
 const deep_cell = '+16477873102';
