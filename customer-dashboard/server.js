@@ -1,11 +1,14 @@
 const express = require('express');
 const app = express();
 
+app.use((req, res, next) => {
+    console.log(`Request: ${req.method} ${req.originalUrl}`);
+    next();
+})
 app.use(express.json());
 
+// Routing
 const dashboard = require('./routes/dashboard.js');
-
-// Routes
 app.use('/', dashboard);
 
 // Start server on post 4201
