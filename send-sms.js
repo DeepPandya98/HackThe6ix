@@ -38,6 +38,8 @@ app.post('/sms', (req, res)=>{
         const mediaUrl = req.body.MediaUrl0;
         console.log('MediaURL: ' + mediaUrl);
     }
+    // TODO: DO SOMETHING WITH RESPONSE
+
     // Response
     const twiml = new MessagingResponse();
     twiml.message('Twilio has received your message');
