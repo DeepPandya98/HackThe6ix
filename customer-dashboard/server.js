@@ -29,7 +29,7 @@ mongoose.connect(mongoUri, {useNewUrlParser: true});
 app.post('/startClaimFlow', (req, res) => {
     res.send('true');
     sendToWhatsapp("Our system has detected that your basement may be flooding, you may want to check. Please response \
-    to this message with '1' if your basement is flooded or '0' if this is a false alarm.");
+    to this message with '1' if your basement has water damage or '0' if this is a false alarm.");
 });
 
 
@@ -73,31 +73,23 @@ app.post('/sms', (req, res) => {
 
     if (claimsState >= 1) {
         getAllClaimsInformation(req);
+    } else {
+        // User indicated there is an issue
+        if (message === '1') {
+            claimsState = 1;
+            /*
+            * phoneNumber,
+            * damageImage,
+            * addressOfIncident,
+            */
+            claimsObj = {
+                phoneNumber: req.body.From,
+                damageImage: '',
+                addressOfIncident: '40 St George St, Toronto, ON',
+            };
+            getAllClaimsInformation(req);
+        }
     }
-
-    // User indicated there is an issue
-    if (message === '1') {
-        claimsState = 1;
-        /*
-         * phoneNumber,
-         * damageImage,
-         * addressOfIncident,
-         */
-        claimsObj = {
-            phoneNumber: req.body.From,
-            damageImage: '',
-            addressOfIncident: '40 St George St, Toronto, ON',
-        };
-        getAllClaimsInformation(req);
-    }
-
-    // Response
-    /*
-    const twiml = new MessagingResponse();
-    twiml.message('Twilio has received your message');
-    res.writeHead(200, {'Content-Type': 'text/xml'});
-    res.end(twiml.toString());
-    */
 });
 
 // Start server on post 4201
@@ -120,9 +112,6 @@ function sendToWhatsapp(message){
 
 const uuid = require('uuid/v4');
 function getAllClaimsInformation(req) {
-    let data = getAllInfo('ClaimsInformation'); // get all claims for a particular user
-    console.log(data);
-
     if (claimsState == 1) { // ask for damage image
         claimsState++;
         sendToWhatsapp('Could you please send a picture of the damages?');
@@ -136,13 +125,15 @@ function getAllClaimsInformation(req) {
             sendToWhatsapp('Could you please send a picture of the damages?');
         }
     } else if (claimsState == 3) {
-        console.log(req.body.Body);
+        claimsState = 0;
         if (req.body.Body == '1') {
             storeClaimsObj(claimsObj);
         } else {
             claimsObj.addressOfIncident = req.body.Body;
             storeClaimsObj(claimsObj);
         }
+        console.log('WE MADE IT');
+        sendToWhatsapp('Thank you, you can view the status of your claim at the following URL: http://localhost:4200/');
     }
 }
 
@@ -156,9 +147,8 @@ connection.once('open', function() {
 });
 
 function storeClaimsObj(claimsData) { // TODO store in collection
-    claimsState = 0;
+    console.log(claimsData);
     claimsObj = undefined;
-    sendToWhatsapp('Thank you, you can view the status of your claim at the following URL: http://localhost:4200/');
 }
 
 
