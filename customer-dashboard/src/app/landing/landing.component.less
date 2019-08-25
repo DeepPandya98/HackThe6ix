@@ -1,0 +1,62 @@
+body {
+    margin: 0px;
+}
+.center_text {
+    color: black;
+    text-align: center;
+    padding-top: 35vh;
+    font-family: 'Livvic', sans-serif;
+}
+.extra_text {
+    font-family: 'Livvic', sans-serif;
+}
+h1 {
+    font-size: 48px;
+}
+.bgimg {
+    background-image: url('./bg-image.jpg');
+    //background-color: red;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.button {
+    display: inline-block;
+    border-radius: 4px;
+    background-color: lightgray;
+    border: none;
+    text-align: center;
+    font-family: 'Livvic', sans-serif;
+    font-size: 18px;
+    padding: 10px;
+    width: 140px;
+    transition: all 0.5s;
+    cursor: pointer;
+    margin: 0;
+  }
+  
+  .button span {
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: 0.5s;
+  }
+  
+  .button span:after {
+    content: '\00bb';
+    position: absolute;
+    opacity: 0;
+    top: 0;
+    right: -20px;
+    transition: 0.5s;
+  }
+  
+  .button:hover span {
+    padding-right: 25px;
+  }
+  
+  .button:hover span:after {
+    opacity: 1;
+    right: 0;
+  }
