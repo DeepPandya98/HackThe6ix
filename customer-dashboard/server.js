@@ -9,6 +9,7 @@ const accountSid = configs.twilioSid;
 const authToken = configs.twilioAuthToken;
 const client = require('twilio')(accountSid, authToken);
 const deep_cell = configs.deepCellNumber;
+const justin_cell = configs.justinCellNumber;
 const whatsapp_num = configs.whatsappNumber;
 const mongoUri = configs.mongoURI;
 
@@ -20,10 +21,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(express.json());
-
-// Routing
-const dashboard = require('./routes/dashboard.js');
-app.use('/', dashboard);
 
 // Connect to mongoDB
 mongoose.connect(mongoUri, {useNewUrlParser: true});
@@ -65,25 +62,42 @@ app.post('/api/getAllInfo', (req,res) =>{
 
 });
 
+// assume only one user being processed at a time
+let claimsState = 0; // add this to datastore later
+let claimsObj;
+
 // Endpoint hit for all incoming messages
-app.post('/sms', (req, res)=>{
+app.post('/sms', (req, res) => {
     const message = req.body.Body;
-    const numImg = req.body.NumMedia;
     console.log('Incoming message: ' + message);
-    console.log('Number of images: ' + numImg);
-    // If image was attached, insert into mongo
-    if(numImg !== '0'){
-        // URL of image
-        const mediaUrl = req.body.MediaUrl0;
-        console.log('MediaURL: ' + mediaUrl);
+
+    if (claimsState >= 1) {
+        getAllClaimsInformation(req);
     }
-    // TODO: DO SOMETHING WITH RESPONSE
+
+    // User indicated there is an issue
+    if (message === '1') {
+        claimsState = 1;
+        /*
+         * phoneNumber,
+         * damageImage,
+         * addressOfIncident,
+         */
+        claimsObj = {
+            phoneNumber: req.body.From,
+            damageImage: '',
+            addressOfIncident: '40 St George St, Toronto, ON',
+        };
+        getAllClaimsInformation(req);
+    }
 
     // Response
+    /*
     const twiml = new MessagingResponse();
     twiml.message('Twilio has received your message');
     res.writeHead(200, {'Content-Type': 'text/xml'});
     res.end(twiml.toString());
+    */
 });
 
 // Start server on post 4201
@@ -95,13 +109,41 @@ http.createServer(app).listen(4201, () => {
 // Function used to send message to deep_cell through whatsapp
 function sendToWhatsapp(message){
     client.messages.create({
-        to: "whatsapp:" + deep_cell,
+        to: "whatsapp:" + justin_cell,
         from: "whatsapp:" + whatsapp_num,
         body: message,
         //mediaUrl: "https://i.cbc.ca/1.3463873.1456419440!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_780/trufa-meme.jpg"
     }).then(message => {
         callback(null, message.sid);
     }).catch(err => callback(err));
+}
+
+const uuid = require('uuid/v4');
+function getAllClaimsInformation(req) {
+    let data = getAllInfo('ClaimsInformation'); // get all claims for a particular user
+    console.log(data);
+
+    if (claimsState == 1) { // ask for damage image
+        claimsState++;
+        sendToWhatsapp('Could you please send a picture of the damages?');
+    } else if (claimsState == 2) {
+        if (req.body.NumMedia != '0') { // image sent
+            claimsState++;
+            claimsObj.damageImage = req.body.MediaUrl0;
+            console.log('MediaURL: ' + claimsObj.damageImage);
+            sendToWhatsapp(`Is ${claimsObj.addressOfIncident} the address of this incident? Please respond to this message with '1' if the correct address was listed, or the corrected address if it has changed`);
+        } else { // image not sent
+            sendToWhatsapp('Could you please send a picture of the damages?');
+        }
+    } else if (claimsState == 3) {
+        console.log(req.body.Body);
+        if (req.body.Body == '1') {
+            storeClaimsObj(claimsObj);
+        } else {
+            claimsObj.addressOfIncident = req.body.Body;
+            storeClaimsObj(claimsObj);
+        }
+    }
 }
 
 
@@ -112,6 +154,12 @@ connection.once('open', function() {
   // we're connected!
   console.log('Connected');
 });
+
+function storeClaimsObj(claimsData) { // TODO store in collection
+    claimsState = 0;
+    claimsObj = undefined;
+    sendToWhatsapp('Thank you, you can view the status of your claim at the following URL: http://localhost:4200/');
+}
 
 
 
@@ -133,11 +181,3 @@ function getAllInfo(collectionName){
           });
     });
 }
-
-// Test
-// getAllInfo('CustomerInformation', function(res){
-//     console.log(res);
-// });
-
-
-
