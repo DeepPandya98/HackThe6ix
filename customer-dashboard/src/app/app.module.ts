@@ -5,6 +5,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LandingComponent } from './landing/landing.component';
+import { MatFormFieldModule } from '@angular/material';
+import {CdkTableModule} from '@angular/cdk/table'
 
 @NgModule({
   declarations: [
@@ -12,9 +14,14 @@ import { LandingComponent } from './landing/landing.component';
     DashboardComponent,
     LandingComponent
   ],
+  exports:[
+    MatFormFieldModule
+  ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    MatFormFieldModule,
+    CdkTableModule
   ],
   providers: [],
   bootstrap: [AppComponent]
